@@ -1,4 +1,4 @@
-package model;
+package com.example.foodNow.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
