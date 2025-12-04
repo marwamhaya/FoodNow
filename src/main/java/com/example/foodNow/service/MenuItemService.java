@@ -59,6 +59,7 @@ public class MenuItemService {
         if (request.getIsAvailable() != null) {
             menuItem.setIsAvailable(request.getIsAvailable());
         }
+        menuItem.setUpdatedAt(java.time.LocalDateTime.now());
 
         MenuItem updatedMenuItem = menuItemRepository.save(menuItem);
         return mapToResponse(updatedMenuItem);
@@ -102,9 +103,18 @@ public class MenuItemService {
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String principal = authentication.getName();
+
+        try {
+            // Try to parse as Long (ID)
+            Long userId = Long.parseLong(principal);
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        } catch (NumberFormatException e) {
+            // If not a number, try to find by email
+            return userRepository.findByEmail(principal)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + principal));
+        }
     }
 
     private MenuItemResponse mapToResponse(MenuItem menuItem) {

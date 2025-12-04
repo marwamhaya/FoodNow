@@ -1,8 +1,8 @@
 package com.example.foodNow.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Email;
 import lombok.Data;
 
 @Data
@@ -22,6 +22,17 @@ public class RestaurantRequest {
 
     private String imageUrl;
 
-    @NotNull(message = "Owner ID is required")
-    private Long ownerId;
+    // Owner fields - admin will create the restaurant and the associated restaurant
+    // user
+    @NotBlank(message = "Owner email is required")
+    @Email(message = "Invalid email format")
+    private String ownerEmail;
+
+    @NotBlank(message = "Owner password is required")
+    private String ownerPassword;
+
+    @NotBlank(message = "Owner full name is required")
+    private String ownerFullName;
+
+    private String ownerPhoneNumber;
 }

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,22 +25,36 @@ public class LivreurService {
 
     private final LivreurRepository livreurRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public LivreurResponse createLivreur(LivreurRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
-
-        if (user.getRole() != User.Role.LIVREUR) {
-            throw new IllegalArgumentException("User must have LIVREUR role");
+        // Only ADMIN can create a livreur
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only ADMIN can create a livreur");
+        }
+        // Admin provides user details in the request. Create a new User with LIVREUR role.
+        if (userRepository.existsByEmail(request.getUserEmail())) {
+            throw new IllegalArgumentException("A user with the provided email already exists");
         }
 
-        if (livreurRepository.findByUserId(user.getId()).isPresent()) {
+        User user = new User();
+        user.setEmail(request.getUserEmail());
+        user.setPassword(passwordEncoder.encode(request.getUserPassword()));
+        user.setFullName(request.getUserFullName());
+        user.setPhoneNumber(request.getUserPhoneNumber());
+        user.setRole(User.Role.LIVREUR);
+        user.setIsActive(true);
+
+        User savedUser = userRepository.save(user);
+
+        if (livreurRepository.findByUserId(savedUser.getId()).isPresent()) {
             throw new IllegalArgumentException("Livreur profile already exists for this user");
         }
 
         Livreur livreur = new Livreur();
-        livreur.setUser(user);
+        livreur.setUser(savedUser);
         livreur.setVehicleType(Livreur.VehicleType.valueOf(request.getVehicleType().toUpperCase()));
         livreur.setIsActive(true);
         livreur.setIsAvailable(false);
@@ -52,6 +67,15 @@ public class LivreurService {
     public LivreurResponse updateLivreur(Long id, LivreurRequest request) {
         Livreur livreur = livreurRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Livreur not found with id: " + id));
+        // Only ADMIN or the livreur owner can update the profile
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != User.Role.ADMIN) {
+            // if not admin, must be the same livreur - verify using getMyLivreurProfile
+            Livreur myProfile = getMyLivreurProfile();
+            if (!myProfile.getId().equals(livreur.getId())) {
+                throw new AccessDeniedException("You are not authorized to update this livreur");
+            }
+        }
 
         livreur.setVehicleType(Livreur.VehicleType.valueOf(request.getVehicleType().toUpperCase()));
 
@@ -106,9 +130,18 @@ public class LivreurService {
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String principal = authentication.getName();
+        
+        try {
+            // Try to parse as Long (ID)
+            Long userId = Long.parseLong(principal);
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        } catch (NumberFormatException e) {
+            // If not a number, try to find by email
+            return userRepository.findByEmail(principal)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + principal));
+        }
     }
 
     private LivreurResponse mapToResponse(Livreur livreur) {
