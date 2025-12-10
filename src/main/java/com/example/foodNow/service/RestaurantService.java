@@ -14,6 +14,7 @@ import com.example.foodNow.repository.OrderRepository;
 import com.example.foodNow.repository.RestaurantRepository;
 import com.example.foodNow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,12 +31,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RestaurantService {
 
         private final RestaurantRepository restaurantRepository;
         private final UserRepository userRepository;
         private final OrderRepository orderRepository;
         private final PasswordEncoder passwordEncoder;
+        private final EmailService emailService;
 
         @Transactional
         public RestaurantResponse createRestaurant(RestaurantRequest request) {
@@ -67,6 +70,21 @@ public class RestaurantService {
                                               // let's assume active for now or admin decides.
 
                 Restaurant savedRestaurant = restaurantRepository.save(restaurant);
+
+                String subject = "Bienvenue sur FoodNow - Compte Restaurant";
+                String body = "Bonjour " + savedOwner.getFullName() + ",\n\n" +
+                                "Votre compte Restaurant a été créé avec succès.\n" +
+                                "Voici vos identifiants :\n" +
+                                "Email : " + savedOwner.getEmail() + "\n" +
+                                "Mot de passe : " + request.getOwnerPassword() + "\n\n" +
+                                "Cordialement,\nL'équipe Admin";
+
+                try {
+                        emailService.sendSimpleMessage(savedOwner.getEmail(), subject, body);
+                } catch (Exception e) {
+                        log.error("Failed to send email to {}", savedOwner.getEmail(), e);
+                }
+
                 return mapToResponse(savedRestaurant);
         }
 

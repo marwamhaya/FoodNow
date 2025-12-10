@@ -22,4 +22,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // Find orders by client
     Page<Order> findByClientId(Long clientId, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(o.totalAmount) FROM Order o")
+    java.math.BigDecimal sumTotalAmount();
 }

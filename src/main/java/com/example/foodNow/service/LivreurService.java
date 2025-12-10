@@ -9,6 +9,7 @@ import com.example.foodNow.model.User;
 import com.example.foodNow.repository.LivreurRepository;
 import com.example.foodNow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,11 +22,13 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LivreurService {
 
     private final LivreurRepository livreurRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Transactional
     public LivreurResponse createLivreur(LivreurRequest request) {
@@ -34,7 +37,8 @@ public class LivreurService {
         if (currentUser.getRole() != User.Role.ADMIN) {
             throw new AccessDeniedException("Only ADMIN can create a livreur");
         }
-        // Admin provides user details in the request. Create a new User with LIVREUR role.
+        // Admin provides user details in the request. Create a new User with LIVREUR
+        // role.
         if (userRepository.existsByEmail(request.getUserEmail())) {
             throw new IllegalArgumentException("A user with the provided email already exists");
         }
@@ -60,6 +64,17 @@ public class LivreurService {
         livreur.setIsAvailable(false);
 
         Livreur savedLivreur = livreurRepository.save(livreur);
+
+        String subject = "Bienvenue sur FoodNow - Compte Livreur";
+        String body = "Bonjour " + savedUser.getFullName() + ",\n\n" +
+                "Votre compte Livreur a été créé avec succès.\n" +
+                "Voici vos identifiants :\n" +
+                "Email : " + savedUser.getEmail() + "\n" +
+                "Mot de passe : " + request.getUserPassword() + "\n\n" +
+                "Cordialement,\nL'équipe Admin";
+
+        emailService.sendSimpleMessage(savedUser.getEmail(), subject, body);
+
         return mapToResponse(savedLivreur);
     }
 
@@ -131,7 +146,7 @@ public class LivreurService {
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String principal = authentication.getName();
-        
+
         try {
             // Try to parse as Long (ID)
             Long userId = Long.parseLong(principal);

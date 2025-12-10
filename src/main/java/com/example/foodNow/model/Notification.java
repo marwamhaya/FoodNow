@@ -13,25 +13,30 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Notification {
 
+    public enum NotificationType {
+        SYSTEM, ORDER_UPDATE, DELIVERY_UPDATE, PROMOTION
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User recipient;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String title;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
-    @Column(nullable = false, length = 50)
-    private String type;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationType type;
 
-    @Column(nullable = false, name = "is_read")
-    private Boolean isRead = false;
+    @Column(name = "is_read")
+    private boolean isRead = false;
 
     @Column(nullable = false, name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();

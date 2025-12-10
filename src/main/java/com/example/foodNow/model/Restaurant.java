@@ -18,8 +18,11 @@ public class Restaurant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @Column(name = "business_name", nullable = false, length = 100)
+    private String businessName;
 
     @Column(nullable = false, length = 255)
     private String address;
@@ -37,8 +40,11 @@ public class Restaurant {
     private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User owner;
+
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -46,8 +52,13 @@ public class Restaurant {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @PrePersist
     @PreUpdate
-    public void preUpdate() {
+    public void syncFields() {
         this.updatedAt = LocalDateTime.now();
+        this.businessName = this.name;
+        if (this.owner != null) {
+            this.ownerId = this.owner.getId();
+        }
     }
 }

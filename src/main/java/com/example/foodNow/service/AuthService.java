@@ -26,12 +26,16 @@ public class AuthService {
             throw new RuntimeException("Email already exists");
         }
 
+        if (request.getRole() != User.Role.CLIENT) {
+            throw new IllegalArgumentException("Only CLIENT registration is allowed via this endpoint");
+        }
+
         var user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhoneNumber(request.getPhoneNumber());
-        user.setRole(request.getRole());
+        user.setRole(User.Role.CLIENT);
         user.setIsActive(true);
 
         userRepository.save(user);
