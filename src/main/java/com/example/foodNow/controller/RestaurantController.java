@@ -2,6 +2,7 @@ package com.example.foodNow.controller;
 
 import com.example.foodNow.dto.OrderActionRequest;
 import com.example.foodNow.dto.OrderItemResponse;
+import com.example.foodNow.dto.MenuItemResponse;
 import com.example.foodNow.dto.OrderResponse;
 import com.example.foodNow.dto.PageResponse;
 import com.example.foodNow.dto.RestaurantRequest;
@@ -23,6 +24,7 @@ import java.util.List;
 public class RestaurantController {
 
     private final RestaurantService restaurantService;
+    private final com.example.foodNow.service.MenuItemService menuItemService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -133,6 +135,13 @@ public class RestaurantController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         return ResponseEntity.ok(restaurantService.getRestaurantOrders(restaurantId, page, size, sortBy, sortDir));
+    }
+
+    // ==================== MENUS ====================
+
+    @GetMapping("/{id}/menu")
+    public ResponseEntity<List<MenuItemResponse>> getRestaurantMenu(@PathVariable Long id) {
+        return ResponseEntity.ok(menuItemService.getMenuItemsByRestaurant(id, true));
     }
 
     // ==================== ORDER MANAGEMENT ====================

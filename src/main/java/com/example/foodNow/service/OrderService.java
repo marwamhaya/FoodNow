@@ -28,7 +28,7 @@ public class OrderService {
     // or passed fully)
     // For this task, we focus on status transitions and retrieval.
 
-    public List<Order> getOrdersByRestaurant() {
+    public java.util.List<com.example.foodNow.dto.OrderResponse> getOrdersByRestaurant() {
         User currentUser = getCurrentUser();
         // Find restaurant owned by user
         Restaurant restaurant = restaurantRepository.findAll().stream()
@@ -36,31 +36,27 @@ public class OrderService {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for current user"));
 
-        return orderRepository.findByRestaurantId(restaurant.getId());
+        return orderRepository.findByRestaurantId(restaurant.getId()).stream()
+                .map(this::mapToOrderResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
-    public List<Order> getOrdersByClient() {
+    public java.util.List<com.example.foodNow.dto.OrderResponse> getOrdersByClient() {
         User currentUser = getCurrentUser();
-        // Use pagination in real app, but list for now as per repo method
-        // Repo has pagination method, let's use the one without or just cast/adapt?
-        // Repo: Page<Order> findByClientId(Long clientId, Pageable pageable);
-        // We need a List version or pass pageable.
-        // Let's add List version to Repo or use Pageable.unpaged()
-        // For simplicity, let's assume we can add List version or use Pageable.
-        // I'll use Pageable.unpaged() if I can, or just add List method to repo.
-        // I'll add List method to Repo in next step if needed.
-        // Wait, I can just use findAll and filter? No, inefficient.
-        // I'll assume I can use the existing Page method and getContent().
         return orderRepository.findByClientId(currentUser.getId(), org.springframework.data.domain.Pageable.unpaged())
-                .getContent();
+                .getContent().stream()
+                .map(this::mapToOrderResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public java.util.List<com.example.foodNow.dto.OrderResponse> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(this::mapToOrderResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Transactional
-    public Order updateOrderStatus(Long orderId, String statusStr) {
+    public com.example.foodNow.dto.OrderResponse updateOrderStatus(Long orderId, String statusStr) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
@@ -74,7 +70,7 @@ public class OrderService {
                 "Your order status is now: " + newStatus,
                 com.example.foodNow.model.Notification.NotificationType.ORDER_UPDATE);
 
-        return orderRepository.save(order);
+        return mapToOrderResponse(orderRepository.save(order));
     }
 
     private User getCurrentUser() {
@@ -86,5 +82,40 @@ public class OrderService {
         } catch (NumberFormatException e) {
             return userRepository.findByEmail(principal).orElseThrow();
         }
+    }
+
+    private com.example.foodNow.dto.OrderResponse mapToOrderResponse(Order order) {
+        com.example.foodNow.dto.OrderResponse response = new com.example.foodNow.dto.OrderResponse();
+        response.setId(order.getId());
+        response.setClientId(order.getClient().getId());
+        response.setClientName(order.getClient().getFullName());
+        response.setClientPhone(order.getClient().getPhoneNumber());
+        response.setRestaurantId(order.getRestaurant().getId());
+        response.setRestaurantName(order.getRestaurant().getName());
+        response.setTotalAmount(order.getTotalAmount());
+        response.setStatus(order.getStatus());
+        response.setDeliveryAddress(order.getDeliveryAddress());
+        response.setCreatedAt(order.getCreatedAt());
+        response.setUpdatedAt(order.getUpdatedAt());
+
+        // Map order items
+        java.util.List<com.example.foodNow.dto.OrderItemResponse> orderItemResponses = order.getOrderItems().stream()
+                .map(this::mapToOrderItemResponse)
+                .collect(java.util.stream.Collectors.toList());
+        response.setOrderItems(orderItemResponses);
+
+        return response;
+    }
+
+    private com.example.foodNow.dto.OrderItemResponse mapToOrderItemResponse(
+            com.example.foodNow.model.OrderItem orderItem) {
+        com.example.foodNow.dto.OrderItemResponse response = new com.example.foodNow.dto.OrderItemResponse();
+        response.setId(orderItem.getId());
+        response.setMenuItemId(orderItem.getMenuItem().getId());
+        response.setMenuItemName(orderItem.getMenuItem().getName());
+        response.setQuantity(orderItem.getQuantity());
+        response.setUnitPrice(orderItem.getUnitPrice());
+        response.setSubtotal(orderItem.getSubtotal());
+        return response;
     }
 }

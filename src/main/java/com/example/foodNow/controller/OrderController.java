@@ -18,25 +18,25 @@ public class OrderController {
 
     @GetMapping("/restaurant")
     @PreAuthorize("hasRole('RESTAURANT')")
-    public ResponseEntity<List<Order>> getRestaurantOrders() {
+    public ResponseEntity<List<com.example.foodNow.dto.OrderResponse>> getRestaurantOrders() {
         return ResponseEntity.ok(orderService.getOrdersByRestaurant());
     }
 
     @GetMapping("/client")
     @PreAuthorize("hasRole('CLIENT')")
-    public ResponseEntity<List<Order>> getClientOrders() {
+    public ResponseEntity<List<com.example.foodNow.dto.OrderResponse>> getClientOrders() {
         return ResponseEntity.ok(orderService.getOrdersByClient());
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<Order>> getAllOrders() {
+    public ResponseEntity<List<com.example.foodNow.dto.OrderResponse>> getAllOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'RESTAURANT')")
-    public ResponseEntity<Order> updateOrderStatus(
+    public ResponseEntity<com.example.foodNow.dto.OrderResponse> updateOrderStatus(
             @PathVariable Long id,
             @RequestParam String status) {
         return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
