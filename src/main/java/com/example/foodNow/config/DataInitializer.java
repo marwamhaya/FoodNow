@@ -85,7 +85,10 @@ public class DataInitializer {
                 sushiPlace.setOwner(owner);
                 sushiPlace = restaurantRepository.save(sushiPlace);
 
-                createMenuItem(sushiPlace, "Salmon Nigiri", "Fresh salmon on vinegared rice",
+                sushiPlace = restaurantRepository.save(sushiPlace);
+
+                com.example.foodNow.model.MenuItem nigiri = createMenuItem(sushiPlace, "Salmon Nigiri",
+                                "Fresh salmon on vinegared rice",
                                 new java.math.BigDecimal("5.50"),
                                 "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=500&auto=format&fit=crop&q=60",
                                 "Sushi");
@@ -95,6 +98,22 @@ public class DataInitializer {
                 createMenuItem(sushiPlace, "Miso Soup", "Traditional soup", new java.math.BigDecimal("3.00"),
                                 "https://images.unsplash.com/photo-1547592180-85f173990554?w=500&auto=format&fit=crop&q=60",
                                 "Sides");
+
+                // Options for Sushi
+                com.example.foodNow.model.MenuOptionGroup sushiOptions = new com.example.foodNow.model.MenuOptionGroup();
+                sushiOptions.setName("Wasabi");
+                sushiOptions.setRequired(false);
+                sushiOptions.setMultiple(false);
+                sushiOptions.setMenuItem(nigiri);
+
+                com.example.foodNow.model.MenuOption extraWasabi = new com.example.foodNow.model.MenuOption();
+                extraWasabi.setName("Extra Wasabi");
+                extraWasabi.setExtraPrice(new java.math.BigDecimal("0.50"));
+                extraWasabi.setOptionGroup(sushiOptions);
+
+                sushiOptions.setOptions(java.util.List.of(extraWasabi));
+                nigiri.setOptionGroups(java.util.List.of(sushiOptions));
+                menuItemRepository.save(nigiri); // Save updates
 
                 // Restaurant 2: Burger
                 com.example.foodNow.model.Restaurant burgerJoint = new com.example.foodNow.model.Restaurant();
@@ -137,9 +156,49 @@ public class DataInitializer {
                                 "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500&auto=format&fit=crop&q=60",
                                 "Pizza");
 
+                // Restaurant 4: Tacos (New feature demo)
+                com.example.foodNow.model.Restaurant tacoPlace = new com.example.foodNow.model.Restaurant();
+                tacoPlace.setName("Taco Fiesta");
+                tacoPlace.setBusinessName("Taco Fiesta SA");
+                tacoPlace.setAddress("404 Guacamole Ln, Mexico City");
+                tacoPlace.setDescription("Authentic Tacos.");
+                tacoPlace.setPhone("555-0104");
+                tacoPlace.setImageUrl(
+                                "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=500&auto=format&fit=crop&q=60");
+                tacoPlace.setOwner(owner);
+                tacoPlace = restaurantRepository.save(tacoPlace);
+
+                com.example.foodNow.model.MenuItem taco = createMenuItem(tacoPlace, "Beef Tacos",
+                                "3 Beef Tacos with herbs",
+                                new java.math.BigDecimal("9.50"),
+                                "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=500&auto=format&fit=crop&q=60",
+                                "Tacos");
+
+                // Options for Tacos
+                com.example.foodNow.model.MenuOptionGroup sauceGroup = new com.example.foodNow.model.MenuOptionGroup();
+                sauceGroup.setName("Sauce (Choose 1)");
+                sauceGroup.setRequired(true);
+                sauceGroup.setMultiple(false);
+                sauceGroup.setMenuItem(taco);
+
+                com.example.foodNow.model.MenuOption mild = new com.example.foodNow.model.MenuOption();
+                mild.setName("Mild");
+                mild.setExtraPrice(java.math.BigDecimal.ZERO);
+                mild.setOptionGroup(sauceGroup);
+
+                com.example.foodNow.model.MenuOption spicy = new com.example.foodNow.model.MenuOption();
+                spicy.setName("Spicy (+0.50)");
+                spicy.setExtraPrice(new java.math.BigDecimal("0.50"));
+                spicy.setOptionGroup(sauceGroup);
+
+                sauceGroup.setOptions(java.util.List.of(mild, spicy));
+                taco.setOptionGroups(java.util.List.of(sauceGroup));
+                menuItemRepository.save(taco);
+
         }
 
-        private void createMenuItem(com.example.foodNow.model.Restaurant restaurant, String name, String desc,
+        private com.example.foodNow.model.MenuItem createMenuItem(com.example.foodNow.model.Restaurant restaurant,
+                        String name, String desc,
                         java.math.BigDecimal price, String img, String category) {
                 com.example.foodNow.model.MenuItem item = new com.example.foodNow.model.MenuItem();
                 item.setRestaurant(restaurant);
@@ -148,7 +207,8 @@ public class DataInitializer {
                 item.setPrice(price);
                 item.setImageUrl(img);
                 item.setCategory(category);
-                menuItemRepository.save(item);
+                item.setCategory(category);
+                return menuItemRepository.save(item);
         }
 
         private void seedOrders(User client, java.util.List<com.example.foodNow.model.Restaurant> restaurants) {

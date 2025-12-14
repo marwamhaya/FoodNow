@@ -41,4 +41,11 @@ public class OrderController {
             @RequestParam String status) {
         return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
     }
+
+    @PostMapping
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<com.example.foodNow.dto.OrderResponse> createOrder(
+            @RequestBody com.example.foodNow.dto.OrderRequest request) {
+        return ResponseEntity.ok(orderService.createOrder(request));
+    }
 }

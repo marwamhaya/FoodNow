@@ -8,6 +8,8 @@ import com.example.foodNow.model.Restaurant;
 import com.example.foodNow.model.User;
 import com.example.foodNow.repository.MenuItemRepository;
 import com.example.foodNow.repository.RestaurantRepository;
+import com.example.foodNow.dto.MenuOptionGroupResponse;
+import com.example.foodNow.dto.MenuOptionResponse;
 import com.example.foodNow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -39,6 +41,31 @@ public class MenuItemService {
         menuItem.setImageUrl(request.getImageUrl());
         menuItem.setCategory(request.getCategory());
         menuItem.setIsAvailable(request.getIsAvailable() != null ? request.getIsAvailable() : true);
+
+        if (request.getOptionGroups() != null) {
+            List<com.example.foodNow.model.MenuOptionGroup> groups = request.getOptionGroups().stream()
+                    .map(groupRequest -> {
+                        com.example.foodNow.model.MenuOptionGroup group = new com.example.foodNow.model.MenuOptionGroup();
+                        group.setName(groupRequest.getName());
+                        group.setRequired(groupRequest.isRequired());
+                        group.setMultiple(groupRequest.isMultiple());
+                        group.setMenuItem(menuItem);
+
+                        if (groupRequest.getOptions() != null) {
+                            List<com.example.foodNow.model.MenuOption> options = groupRequest.getOptions().stream()
+                                    .map(optionRequest -> {
+                                        com.example.foodNow.model.MenuOption option = new com.example.foodNow.model.MenuOption();
+                                        option.setName(optionRequest.getName());
+                                        option.setExtraPrice(optionRequest.getExtraPrice());
+                                        option.setOptionGroup(group);
+                                        return option;
+                                    }).collect(Collectors.toList());
+                            group.setOptions(options);
+                        }
+                        return group;
+                    }).collect(Collectors.toList());
+            menuItem.setOptionGroups(groups);
+        }
 
         MenuItem savedMenuItem = menuItemRepository.save(menuItem);
         return mapToResponse(savedMenuItem);
@@ -129,6 +156,33 @@ public class MenuItemService {
         response.setIsAvailable(menuItem.getIsAvailable());
         response.setCreatedAt(menuItem.getCreatedAt());
         response.setUpdatedAt(menuItem.getUpdatedAt());
+
+        if (menuItem.getOptionGroups() != null) {
+            List<MenuOptionGroupResponse> groups = menuItem.getOptionGroups().stream()
+                    .map(group -> {
+                        MenuOptionGroupResponse groupResponse = new MenuOptionGroupResponse();
+                        groupResponse.setId(group.getId());
+                        groupResponse.setName(group.getName());
+                        groupResponse.setRequired(group.isRequired()); // Lombok likely generates isRequired() for
+                                                                       // boolean
+                        groupResponse.setMultiple(group.isMultiple());
+
+                        if (group.getOptions() != null) {
+                            List<MenuOptionResponse> options = group.getOptions().stream()
+                                    .map(option -> {
+                                        MenuOptionResponse optionResponse = new MenuOptionResponse();
+                                        optionResponse.setId(option.getId());
+                                        optionResponse.setName(option.getName());
+                                        optionResponse.setExtraPrice(option.getExtraPrice());
+                                        return optionResponse;
+                                    }).collect(Collectors.toList());
+                            groupResponse.setOptions(options);
+                        }
+                        return groupResponse;
+                    }).collect(Collectors.toList());
+            response.setOptionGroups(groups);
+        }
+
         return response;
     }
 }

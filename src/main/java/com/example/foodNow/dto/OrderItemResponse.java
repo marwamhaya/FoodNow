@@ -16,4 +16,5 @@ public class OrderItemResponse {
     private Integer quantity;
     private BigDecimal unitPrice;
     private BigDecimal subtotal;
+    private java.util.List<SelectedOptionResponse> selectedOptions;
 }

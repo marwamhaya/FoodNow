@@ -3,6 +3,7 @@ package com.example.foodNow.dto;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class MenuItemResponse {
@@ -16,4 +17,5 @@ public class MenuItemResponse {
     private Boolean isAvailable;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<MenuOptionGroupResponse> optionGroups;
 }
