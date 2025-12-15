@@ -13,7 +13,6 @@ public class LivreurRequest {
     @Email(message = "Invalid email format")
     private String userEmail;
 
-    @NotBlank(message = "User password is required")
     private String userPassword;
 
     @NotBlank(message = "User full name is required")

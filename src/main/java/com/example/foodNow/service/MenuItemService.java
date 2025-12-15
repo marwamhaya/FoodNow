@@ -102,6 +102,16 @@ public class MenuItemService {
         menuItemRepository.delete(menuItem);
     }
 
+    @Transactional
+    public void updateMenuItemImage(Long id, String imageUrl) {
+        MenuItem menuItem = menuItemRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu item not found with id: " + id));
+
+        validateOwnership(menuItem.getRestaurant());
+        menuItem.setImageUrl(imageUrl);
+        menuItemRepository.save(menuItem);
+    }
+
     public List<MenuItemResponse> getMenuItemsByRestaurant(Long restaurantId, boolean activeOnly) {
         List<MenuItem> items;
         if (activeOnly) {

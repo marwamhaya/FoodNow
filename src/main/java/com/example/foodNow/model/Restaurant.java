@@ -36,6 +36,9 @@ public class Restaurant {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "opening_hours")
+    private String openingHours;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

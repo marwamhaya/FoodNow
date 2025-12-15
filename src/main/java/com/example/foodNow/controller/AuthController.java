@@ -30,4 +30,13 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @org.springframework.web.bind.annotation.PutMapping("/change-password")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody com.example.foodNow.dto.ChangePasswordRequest request,
+            java.security.Principal principal) {
+        authService.changePassword(principal.getName(), request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok().build();
+    }
 }

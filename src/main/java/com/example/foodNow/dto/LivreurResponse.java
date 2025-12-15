@@ -7,6 +7,7 @@ public class LivreurResponse {
     private Long id;
     private Long userId;
     private String fullName;
+    private String email;
     private String phone;
     private String vehicleType;
     private Boolean isAvailable;

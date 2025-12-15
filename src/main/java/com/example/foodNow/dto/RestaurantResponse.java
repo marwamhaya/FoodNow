@@ -11,6 +11,7 @@ public class RestaurantResponse {
     private String description;
     private String phone;
     private String imageUrl;
+    private String openingHours;
     private Boolean isActive;
     private Long ownerId;
     private String ownerName;

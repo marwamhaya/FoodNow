@@ -42,6 +42,9 @@ public class LivreurService {
         if (userRepository.existsByEmail(request.getUserEmail())) {
             throw new IllegalArgumentException("A user with the provided email already exists");
         }
+        if (request.getUserPassword() == null || request.getUserPassword().isEmpty()) {
+            throw new IllegalArgumentException("User password is required");
+        }
 
         User user = new User();
         user.setEmail(request.getUserEmail());
@@ -93,6 +96,28 @@ public class LivreurService {
         }
 
         livreur.setVehicleType(Livreur.VehicleType.valueOf(request.getVehicleType().toUpperCase()));
+
+        // Update User details
+        User user = livreur.getUser();
+        boolean userUpdated = false;
+
+        if (request.getUserFullName() != null && !request.getUserFullName().isEmpty()) {
+            user.setFullName(request.getUserFullName());
+            userUpdated = true;
+        }
+        if (request.getUserPhoneNumber() != null) {
+            user.setPhoneNumber(request.getUserPhoneNumber());
+            userUpdated = true;
+        }
+
+        if (request.getUserPassword() != null && !request.getUserPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(request.getUserPassword()));
+            userUpdated = true;
+        }
+
+        if (userUpdated) {
+            userRepository.save(user);
+        }
 
         Livreur updatedLivreur = livreurRepository.save(livreur);
         return mapToResponse(updatedLivreur);
@@ -164,6 +189,7 @@ public class LivreurService {
         response.setId(livreur.getId());
         response.setUserId(livreur.getUser().getId());
         response.setFullName(livreur.getUser().getFullName());
+        response.setEmail(livreur.getUser().getEmail());
         response.setPhone(livreur.getUser().getPhoneNumber());
         response.setVehicleType(livreur.getVehicleType().name());
         response.setIsAvailable(livreur.getIsAvailable());

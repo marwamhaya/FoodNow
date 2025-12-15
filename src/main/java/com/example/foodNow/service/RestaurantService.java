@@ -44,6 +44,11 @@ public class RestaurantService {
         public RestaurantResponse createRestaurant(RestaurantRequest request) {
                 // Admin provides owner details in the request. Create a new User with
                 // RESTAURANT role.
+                if (request.getOwnerEmail() == null || request.getOwnerPassword() == null
+                                || request.getOwnerFullName() == null) {
+                        throw new IllegalArgumentException("Owner email, password, and name are required for creation");
+                }
+
                 if (userRepository.existsByEmail(request.getOwnerEmail())) {
                         throw new IllegalArgumentException("A user with the provided email already exists");
                 }
@@ -64,6 +69,7 @@ public class RestaurantService {
                 restaurant.setDescription(request.getDescription());
                 restaurant.setPhone(request.getPhone());
                 restaurant.setImageUrl(request.getImageUrl());
+                restaurant.setOpeningHours(request.getOpeningHours());
                 restaurant.setOwner(savedOwner);
                 restaurant.setIsActive(true); // Active by default or false pending validation? Prompt says
                                               // "créer/valider",
@@ -101,6 +107,7 @@ public class RestaurantService {
                 restaurant.setDescription(request.getDescription());
                 restaurant.setPhone(request.getPhone());
                 restaurant.setImageUrl(request.getImageUrl());
+                restaurant.setOpeningHours(request.getOpeningHours());
 
                 // Explicitly update the updated_at field
                 restaurant.setUpdatedAt(java.time.LocalDateTime.now());
@@ -138,6 +145,17 @@ public class RestaurantService {
                                                 "Restaurant not found with id: " + id));
 
                 restaurant.setIsActive(!restaurant.getIsActive());
+                restaurantRepository.save(restaurant);
+        }
+
+        @Transactional
+        public void updateRestaurantImage(Long id, String imageUrl) {
+                Restaurant restaurant = restaurantRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Restaurant not found with id: " + id));
+
+                validateOwnershipOrAdmin(restaurant);
+                restaurant.setImageUrl(imageUrl);
                 restaurantRepository.save(restaurant);
         }
 
@@ -224,6 +242,7 @@ public class RestaurantService {
                 response.setDescription(restaurant.getDescription());
                 response.setPhone(restaurant.getPhone());
                 response.setImageUrl(restaurant.getImageUrl());
+                response.setOpeningHours(restaurant.getOpeningHours());
                 response.setIsActive(restaurant.getIsActive());
                 response.setOwnerId(restaurant.getOwner().getId());
                 response.setOwnerName(restaurant.getOwner().getFullName());

@@ -17,21 +17,21 @@ public class RestaurantRequest {
     private String description;
 
     @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "Invalid phone number format")
+
     private String phone;
 
     private String imageUrl;
 
+    private String openingHours;
+
     // Owner fields - admin will create the restaurant and the associated restaurant
     // user
-    @NotBlank(message = "Owner email is required")
+
     @Email(message = "Invalid email format")
     private String ownerEmail;
 
-    @NotBlank(message = "Owner password is required")
     private String ownerPassword;
 
-    @NotBlank(message = "Owner full name is required")
     private String ownerFullName;
 
     private String ownerPhoneNumber;

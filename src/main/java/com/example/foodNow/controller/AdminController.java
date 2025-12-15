@@ -1,5 +1,6 @@
 package com.example.foodNow.controller;
 
+import com.example.foodNow.dto.RestaurantResponse;
 import com.example.foodNow.model.Restaurant;
 import com.example.foodNow.model.User;
 import com.example.foodNow.service.AdminService;
@@ -36,7 +37,7 @@ public class AdminController {
     }
 
     @GetMapping("/restaurants")
-    public ResponseEntity<List<Restaurant>> getAllRestaurants() {
+    public ResponseEntity<List<RestaurantResponse>> getAllRestaurants() {
         return ResponseEntity.ok(adminService.getAllRestaurants());
     }
 
@@ -44,5 +45,20 @@ public class AdminController {
     public ResponseEntity<Void> toggleRestaurantStatus(@PathVariable Long id) {
         adminService.toggleRestaurantStatus(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/users/{id}/reset-password")
+    public ResponseEntity<Void> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        String newPassword = payload.get("password");
+        if (newPassword == null || newPassword.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        adminService.resetUserPassword(id, newPassword);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/restaurants/{id}/orders/count/today")
+    public ResponseEntity<Long> getDailyOrderCount(@PathVariable Long id) {
+        return ResponseEntity.ok(adminService.getDailyOrderCount(id));
     }
 }
