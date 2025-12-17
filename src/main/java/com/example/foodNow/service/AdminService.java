@@ -26,6 +26,7 @@ public class AdminService {
     private final RestaurantRepository restaurantRepository;
     private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public Map<String, Object> getSystemStats() {
         Map<String, Object> stats = new HashMap<>();
@@ -96,6 +97,14 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+
+        // Send email notification
+        try {
+            emailService.sendPasswordChangeEmail(user.getEmail(), user.getFullName(), newPassword);
+        } catch (Exception e) {
+            // Log error but don't fail transaction
+            System.err.println("Failed to send password change email: " + e.getMessage());
+        }
     }
 
     public long getDailyOrderCount(Long restaurantId) {

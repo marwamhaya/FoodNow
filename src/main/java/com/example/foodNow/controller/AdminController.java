@@ -49,7 +49,7 @@ public class AdminController {
 
     @PostMapping("/users/{id}/reset-password")
     public ResponseEntity<Void> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
-        String newPassword = payload.get("password");
+        String newPassword = payload.get("newPassword");
         if (newPassword == null || newPassword.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }

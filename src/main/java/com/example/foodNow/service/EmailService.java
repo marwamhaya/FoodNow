@@ -31,17 +31,27 @@ public class EmailService {
             message.setTo(to);
             message.setSubject(subject);
             message.setText(text);
+            log.info("Attempting to send email to: {}", to);
             emailSender.send(message);
-            log.info("Email sent to {} with subject: {}", to, subject);
+            log.info("Email sent successfully to {}", to);
+            // System.out for visibility if logger is configured to hide info
+            System.out.println("SUCCESS: Email sent to " + to);
         } catch (Exception e) {
             log.error("Failed to send email to {}: {}", to, e.getMessage());
-            // We do not throw exception here to prevent rolling back the user creation
-            // transaction just because email failed?
-            // Depends on business requirement. Usually, email failure shouldn't block
-            // account creation unless critical.
-            // Requirement says "Envoi par email". If it fails, admin might need to resend
-            // manually.
-            // For now, we log error.
+            e.printStackTrace(); // Print full stack trace for debugging
+            System.err.println("ERROR: Failed to send email to " + to + ". Reason: " + e.getMessage());
         }
+    }
+
+    public void sendPasswordChangeEmail(String to, String userName, String newPassword) {
+        String subject = "Your FoodNow account password has been changed";
+        String text = String.format("Hello %s,\n\n" +
+                "Your FoodNow account password has been changed by an administrator.\n\n" +
+                "Your new password is: %s\n\n" +
+                "Please log in and change this password as soon as possible for security reasons.\n\n" +
+                "If you did not request this change, please contact support immediately.\n\n" +
+                "FoodNow Team", userName, newPassword);
+
+        sendSimpleMessage(to, subject, text);
     }
 }

@@ -14,4 +14,6 @@ public class LivreurResponse {
     private Boolean isActive;
     private Double latitude;
     private Double longitude;
+    private Double averageRating;
+    private Integer completedDeliveries;
 }

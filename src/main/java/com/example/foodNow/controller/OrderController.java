@@ -1,6 +1,9 @@
 package com.example.foodNow.controller;
 
+import com.example.foodNow.dto.LocationDTO;
+import com.example.foodNow.dto.OrderLocationDTO;
 import com.example.foodNow.model.Order;
+import com.example.foodNow.service.OrderLocationService;
 import com.example.foodNow.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderLocationService orderLocationService;
 
     @GetMapping("/restaurant")
     @PreAuthorize("hasRole('RESTAURANT')")
@@ -42,10 +46,40 @@ public class OrderController {
         return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
     }
 
+    @PutMapping("/{id}/accept")
+    @PreAuthorize("hasRole('RESTAURANT')")
+    public ResponseEntity<com.example.foodNow.dto.OrderResponse> acceptOrder(@PathVariable Long id) {
+        // In a real app, verify restaurant ownership here
+        return ResponseEntity.ok(orderService.updateOrderStatus(id, "PREPARING"));
+    }
+
+    @PutMapping("/{id}/decline")
+    @PreAuthorize("hasRole('RESTAURANT')")
+    public ResponseEntity<com.example.foodNow.dto.OrderResponse> declineOrder(@PathVariable Long id) {
+        // In a real app, verify restaurant ownership here
+        return ResponseEntity.ok(orderService.updateOrderStatus(id, "DECLINED"));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<com.example.foodNow.dto.OrderResponse> createOrder(
             @RequestBody com.example.foodNow.dto.OrderRequest request) {
         return ResponseEntity.ok(orderService.createOrder(request));
+    }
+
+    // Location endpoints for GPS tracking
+    @PostMapping("/{orderId}/location")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<Void> saveOrderLocation(
+            @PathVariable Long orderId,
+            @RequestBody LocationDTO locationDTO) {
+        orderLocationService.saveClientLocation(orderId, locationDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{orderId}/location")
+    @PreAuthorize("hasAnyRole('CLIENT', 'LIVREUR')")
+    public ResponseEntity<OrderLocationDTO> getOrderLocation(@PathVariable Long orderId) {
+        return ResponseEntity.ok(orderLocationService.getOrderLocation(orderId));
     }
 }

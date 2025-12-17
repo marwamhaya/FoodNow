@@ -196,6 +196,17 @@ public class LivreurService {
         response.setIsActive(livreur.getIsActive());
         response.setLatitude(livreur.getCurrentLatitude());
         response.setLongitude(livreur.getCurrentLongitude());
+
+        Double avg = 0.0;
+        if (livreur.getRatingCount() != null && livreur.getRatingCount() > 0) {
+            avg = livreur.getRatingSum() / livreur.getRatingCount();
+            // Round to 1 decimal
+            avg = Math.round(avg * 10.0) / 10.0;
+        }
+        response.setAverageRating(avg);
+        response.setCompletedDeliveries(
+                livreur.getCompletedDeliveries() == null ? 0 : livreur.getCompletedDeliveries());
+
         return response;
     }
 }

@@ -30,4 +30,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     long countByStatus(com.example.foodNow.model.Order.OrderStatus status);
 
     long countByRestaurantIdAndCreatedAtBetween(Long restaurantId, LocalDateTime start, LocalDateTime end);
+
+    List<Order> findByStatusAndDeliveryIsNull(Order.OrderStatus status);
 }

@@ -25,6 +25,8 @@ public class DeliveryService {
     private final DeliveryRepository deliveryRepository;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final com.example.foodNow.repository.LivreurRepository livreurRepository;
+    private final OrderLocationService orderLocationService;
 
     @Transactional
     public DeliveryResponse assignDelivery(Long orderId, Long driverId) {
@@ -33,14 +35,15 @@ public class DeliveryService {
         User driver = userRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
 
-        if (deliveryRepository.findByDriverIdAndStatus(driverId, Delivery.DeliveryStatus.ASSIGNED).size() > 0) {
+        if (deliveryRepository.findByDriverIdAndStatus(driverId, Delivery.DeliveryStatus.DELIVERY_ACCEPTED)
+                .size() > 0) {
             // Optional: Check if driver is already busy?
         }
 
         Delivery delivery = new Delivery();
         delivery.setOrder(order);
         delivery.setDriver(driver);
-        delivery.setStatus(Delivery.DeliveryStatus.ASSIGNED);
+        delivery.setStatus(Delivery.DeliveryStatus.DELIVERY_ACCEPTED);
 
         Delivery savedDelivery = deliveryRepository.save(delivery);
 
@@ -51,12 +54,61 @@ public class DeliveryService {
         return mapToResponse(savedDelivery);
     }
 
+    @Transactional
+    public void createDeliveryRequest(Order order) {
+        // idempotent check
+        if (deliveryRepository.findByOrderId(order.getId()).isPresent()) {
+            return;
+        }
+
+        Delivery delivery = new Delivery();
+        delivery.setOrder(order);
+        // No driver assigned yet
+        delivery.setStatus(Delivery.DeliveryStatus.PENDING);
+        deliveryRepository.save(delivery);
+    }
+
+    public List<DeliveryResponse> getAvailableDeliveryRequests() {
+        return deliveryRepository.findByStatus(Delivery.DeliveryStatus.PENDING).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Assigning a driver now means accepting a PENDING request
+    @Transactional
+    public DeliveryResponse acceptDelivery(Long deliveryId) {
+        Delivery delivery = deliveryRepository.findById(deliveryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery request not found"));
+
+        if (delivery.getStatus() != Delivery.DeliveryStatus.PENDING) {
+            throw new IllegalStateException("Delivery is not available");
+        }
+
+        User currentUser = getCurrentUser();
+        // Optional: Check if driver already has an active delivery
+
+        delivery.setDriver(currentUser);
+        delivery.setStatus(Delivery.DeliveryStatus.DELIVERY_ACCEPTED);
+
+        // Update Order Status
+        delivery.getOrder().setStatus(Order.OrderStatus.IN_DELIVERY); // Or keep PREPARING until pickup?
+        // Let's keep existing flow: Order goes to PREPARING -> READY -> IN_DELIVERY.
+        // If driver accepts, it just means they are assigned.
+        // Order status shouldn't change to IN_DELIVERY until pickup.
+        // But for now, let's leave Order status as is (PREPARING or READY).
+
+        orderRepository.save(delivery.getOrder());
+        return mapToResponse(deliveryRepository.save(delivery));
+    }
+
     public List<DeliveryResponse> getAssignedDeliveries() {
         User currentUser = getCurrentUser();
         List<Delivery> deliveries = deliveryRepository.findByDriverIdAndStatus(currentUser.getId(),
-                Delivery.DeliveryStatus.ASSIGNED);
+                Delivery.DeliveryStatus.DELIVERY_ACCEPTED);
         deliveries.addAll(
                 deliveryRepository.findByDriverIdAndStatus(currentUser.getId(), Delivery.DeliveryStatus.PICKED_UP));
+        deliveries.addAll(
+                deliveryRepository.findByDriverIdAndStatus(currentUser.getId(), Delivery.DeliveryStatus.ON_THE_WAY));
         return deliveries.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -94,11 +146,41 @@ public class DeliveryService {
         } else if (newStatus == Delivery.DeliveryStatus.DELIVERED) {
             delivery.setDeliveryTime(LocalDateTime.now());
             delivery.getOrder().setStatus(Order.OrderStatus.DELIVERED);
+
+            // Update Livreur stats
+            com.example.foodNow.model.Livreur livreur = livreurRepository.findByUserId(delivery.getDriver().getId())
+                    .orElse(null);
+            if (livreur != null) {
+                livreur.setCompletedDeliveries(livreur.getCompletedDeliveries() + 1);
+                livreurRepository.save(livreur);
+            }
+
+            // Clean up GPS location data
+            orderLocationService.deleteOrderLocation(delivery.getOrder().getId());
         }
 
         orderRepository.save(delivery.getOrder());
         Delivery savedDelivery = deliveryRepository.save(delivery);
         return mapToResponse(savedDelivery);
+    }
+
+    @Transactional
+    public void rateDelivery(Long deliveryId, int rating, String comment) {
+        Delivery delivery = deliveryRepository.findById(deliveryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery not found"));
+
+        delivery.setRating(rating);
+        delivery.setRatingComment(comment);
+        deliveryRepository.save(delivery);
+
+        // Update average rating for Livreur
+        com.example.foodNow.model.Livreur livreur = livreurRepository.findByUserId(delivery.getDriver().getId())
+                .orElse(null);
+        if (livreur != null) {
+            livreur.setRatingSum(livreur.getRatingSum() + rating);
+            livreur.setRatingCount(livreur.getRatingCount() + 1);
+            livreurRepository.save(livreur);
+        }
     }
 
     private User getCurrentUser() {

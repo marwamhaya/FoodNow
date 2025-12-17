@@ -1,4 +1,5 @@
 package com.example.foodNow.model;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,7 +18,7 @@ public class Order {
 
     public enum OrderStatus {
         PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP,
-        IN_DELIVERY, DELIVERED, CANCELLED
+        IN_DELIVERY, DELIVERED, CANCELLED, DECLINED
     }
 
     @Id

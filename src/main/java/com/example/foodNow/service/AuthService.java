@@ -17,9 +17,9 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder;//A security tool to "hash" (scramble) passwords
+    private final JwtService jwtService;//A utility to create the digital ID card (Token) that users will use to prove who they are.
+    private final AuthenticationManager authenticationManager;//Spring Security's heavy lifter that actually checks if a username/password combination is correct.
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {

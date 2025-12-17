@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class Delivery {
 
     public enum DeliveryStatus {
-        PENDING, ASSIGNED, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED
+        PENDING, DELIVERY_ACCEPTED, PICKED_UP, ON_THE_WAY, DELIVERED, CANCELLED
     }
 
     @Id
@@ -38,6 +38,12 @@ public class Delivery {
 
     @Column(name = "delivery_time")
     private LocalDateTime deliveryTime;
+
+    @Column(name = "rating")
+    private Integer rating;
+
+    @Column(name = "rating_comment", columnDefinition = "TEXT")
+    private String ratingComment;
 
     @Column(nullable = false, name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();

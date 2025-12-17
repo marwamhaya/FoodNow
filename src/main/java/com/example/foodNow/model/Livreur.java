@@ -39,4 +39,13 @@ public class Livreur {
 
     @Column(name = "current_longitude")
     private Double currentLongitude;
+
+    @Column(name = "rating_sum")
+    private Double ratingSum = 0.0;
+
+    @Column(name = "rating_count")
+    private Integer ratingCount = 0;
+
+    @Column(name = "completed_deliveries")
+    private Integer completedDeliveries = 0;
 }
