@@ -151,8 +151,14 @@ public class DeliveryService {
             com.example.foodNow.model.Livreur livreur = livreurRepository.findByUserId(delivery.getDriver().getId())
                     .orElse(null);
             if (livreur != null) {
-                livreur.setCompletedDeliveries(livreur.getCompletedDeliveries() + 1);
+                int currentCompleted = livreur.getCompletedDeliveries() != null ? livreur.getCompletedDeliveries() : 0;
+                System.out.println(
+                        "DEBUG: Updating driver stats. ID=" + livreur.getId() + ", OldCompleted=" + currentCompleted);
+                livreur.setCompletedDeliveries(currentCompleted + 1);
                 livreurRepository.save(livreur);
+            } else {
+                System.out.println("DEBUG: Livreur NOT FOUND in updateDeliveryStatus for user ID: "
+                        + delivery.getDriver().getId());
             }
 
             // Clean up GPS location data
@@ -177,9 +183,17 @@ public class DeliveryService {
         com.example.foodNow.model.Livreur livreur = livreurRepository.findByUserId(delivery.getDriver().getId())
                 .orElse(null);
         if (livreur != null) {
-            livreur.setRatingSum(livreur.getRatingSum() + rating);
-            livreur.setRatingCount(livreur.getRatingCount() + 1);
+            double currentSum = livreur.getRatingSum() != null ? livreur.getRatingSum() : 0.0;
+            int currentCount = livreur.getRatingCount() != null ? livreur.getRatingCount() : 0;
+
+            System.out.println("DEBUG: Updating rating. ID=" + livreur.getId() + ", OldSum=" + currentSum
+                    + ", OldCount=" + currentCount + ", NewRating=" + rating);
+
+            livreur.setRatingSum(currentSum + rating);
+            livreur.setRatingCount(currentCount + 1);
             livreurRepository.save(livreur);
+        } else {
+            System.out.println("DEBUG: Livreur NOT FOUND in rateDelivery for user ID: " + delivery.getDriver().getId());
         }
     }
 
@@ -210,6 +224,8 @@ public class DeliveryService {
         response.setPickupTime(delivery.getPickupTime());
         response.setDeliveryTime(delivery.getDeliveryTime());
         response.setCreatedAt(delivery.getCreatedAt());
+        response.setRating(delivery.getRating());
+        response.setRatingComment(delivery.getRatingComment());
         return response;
     }
 }

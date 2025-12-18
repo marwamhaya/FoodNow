@@ -133,9 +133,14 @@ public class LivreurService {
 
     @Transactional
     public void toggleAvailability() {
+        System.out.println("DEBUG: toggleAvailability called");
         Livreur livreur = getMyLivreurProfile();
-        livreur.setIsAvailable(!livreur.getIsAvailable());
+        System.out.println(
+                "DEBUG: Found profile for: " + livreur.getId() + ", Current Status: " + livreur.getIsAvailable());
+        boolean newState = !livreur.getIsAvailable();
+        livreur.setIsAvailable(newState);
         livreurRepository.save(livreur);
+        System.out.println("DEBUG: availability toggled. New Status: " + newState);
     }
 
     @Transactional

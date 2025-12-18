@@ -16,4 +16,6 @@ public class DeliveryResponse {
     private LocalDateTime pickupTime;
     private LocalDateTime deliveryTime;
     private LocalDateTime createdAt;
+    private Integer rating;
+    private String ratingComment;
 }

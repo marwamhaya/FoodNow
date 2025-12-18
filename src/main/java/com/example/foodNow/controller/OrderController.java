@@ -82,4 +82,13 @@ public class OrderController {
     public ResponseEntity<OrderLocationDTO> getOrderLocation(@PathVariable Long orderId) {
         return ResponseEntity.ok(orderLocationService.getOrderLocation(orderId));
     }
+
+    @PatchMapping("/{orderId}/driver-location")
+    @PreAuthorize("hasRole('LIVREUR')")
+    public ResponseEntity<Void> updateDriverLocation(
+            @PathVariable Long orderId,
+            @RequestBody LocationDTO locationDTO) {
+        orderLocationService.updateDriverLocation(orderId, locationDTO);
+        return ResponseEntity.ok().build();
+    }
 }
