@@ -8,7 +8,10 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public class MenuOptionRequest {
+
+    private Long id;
 
     @NotBlank(message = "Option name is required")
     private String name;

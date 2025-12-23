@@ -46,4 +46,9 @@ public class MenuItemController {
             @RequestParam(defaultValue = "true") boolean activeOnly) {
         return ResponseEntity.ok(menuItemService.getMenuItemsByRestaurant(restaurantId, activeOnly));
     }
+
+    @GetMapping("/menu-items/popular")
+    public ResponseEntity<List<MenuItemResponse>> getPopularMenuItems() {
+        return ResponseEntity.ok(menuItemService.getPopularMenuItems());
+    }
 }

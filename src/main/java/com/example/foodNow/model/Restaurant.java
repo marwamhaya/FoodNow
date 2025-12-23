@@ -39,6 +39,12 @@ public class Restaurant {
     @Column(name = "opening_hours")
     private String openingHours;
 
+    @Column(name = "average_rating")
+    private Double averageRating = 0.0;
+
+    @Column(name = "rating_count")
+    private Integer ratingCount = 0;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 

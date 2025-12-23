@@ -19,10 +19,14 @@ public class OrderResponse {
     private String clientPhone;
     private Long restaurantId;
     private String restaurantName;
+    private String restaurantImageUrl;
+    private String restaurantAddress;
     private BigDecimal totalAmount;
     private Order.OrderStatus status;
     private String deliveryAddress;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<OrderItemResponse> orderItems;
+    private String driverName;
+    private String driverPhone;
 }

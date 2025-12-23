@@ -11,4 +11,8 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
     List<MenuItem> findByRestaurantId(Long restaurantId);
 
     List<MenuItem> findByRestaurantIdAndIsAvailableTrue(Long restaurantId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT oi.menuItem FROM OrderItem oi GROUP BY oi.menuItem ORDER BY SUM(oi.quantity) DESC")
+    org.springframework.data.domain.Page<MenuItem> findMostPopularItems(
+            org.springframework.data.domain.Pageable pageable);
 }

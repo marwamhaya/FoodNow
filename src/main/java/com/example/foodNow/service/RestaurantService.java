@@ -1,5 +1,9 @@
 package com.example.foodNow.service;
 
+import com.example.foodNow.dto.RestaurantStatsResponse;
+import com.example.foodNow.model.Order.OrderStatus;
+import java.math.BigDecimal;
+
 import com.example.foodNow.dto.OrderItemResponse;
 import com.example.foodNow.dto.OrderResponse;
 import com.example.foodNow.dto.PageResponse;
@@ -13,6 +17,8 @@ import com.example.foodNow.model.User;
 import com.example.foodNow.repository.OrderRepository;
 import com.example.foodNow.repository.RestaurantRepository;
 import com.example.foodNow.repository.UserRepository;
+import com.example.foodNow.security.JwtService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +45,33 @@ public class RestaurantService {
         private final OrderRepository orderRepository;
         private final PasswordEncoder passwordEncoder;
         private final EmailService emailService;
+        private final JwtService jwtService;
+
+        public RestaurantStatsResponse getRestaurantStats(String token) {
+                String email = jwtService.extractUsername(token.substring(7));
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+                Restaurant restaurant = restaurantRepository.findByOwnerId(user.getId())
+                                .orElseThrow(() -> new EntityNotFoundException("Restaurant not found for this user"));
+
+                Long totalOrders = orderRepository.countByRestaurantId(restaurant.getId());
+                BigDecimal totalRevenue = orderRepository.sumTotalAmountByRestaurantIdAndStatus(restaurant.getId(),
+                                OrderStatus.DELIVERED);
+                if (totalRevenue == null)
+                        totalRevenue = BigDecimal.ZERO;
+
+                Integer totalClients = orderRepository.countDistinctClientsByRestaurantId(restaurant.getId());
+                if (totalClients == null)
+                        totalClients = 0;
+
+                return new RestaurantStatsResponse(
+                                totalOrders,
+                                totalRevenue,
+                                restaurant.getAverageRating() != null ? restaurant.getAverageRating() : 0.0,
+                                restaurant.getRatingCount() != null ? restaurant.getRatingCount() : 0,
+                                totalClients);
+        }
 
         @Transactional
         public RestaurantResponse createRestaurant(RestaurantRequest request) {
@@ -248,6 +281,8 @@ public class RestaurantService {
                 response.setOwnerName(restaurant.getOwner().getFullName());
                 response.setCreatedAt(restaurant.getCreatedAt());
                 response.setUpdatedAt(restaurant.getUpdatedAt());
+                response.setAverageRating(restaurant.getAverageRating());
+                response.setRatingCount(restaurant.getRatingCount());
                 return response;
         }
 
@@ -461,6 +496,8 @@ public class RestaurantService {
                 response.setClientPhone(order.getClient().getPhoneNumber());
                 response.setRestaurantId(order.getRestaurant().getId());
                 response.setRestaurantName(order.getRestaurant().getName());
+                response.setRestaurantImageUrl(order.getRestaurant().getImageUrl());
+                response.setRestaurantAddress(order.getRestaurant().getAddress());
                 response.setTotalAmount(order.getTotalAmount());
                 response.setStatus(order.getStatus());
                 response.setDeliveryAddress(order.getDeliveryAddress());
@@ -484,6 +521,7 @@ public class RestaurantService {
                 response.setId(orderItem.getId());
                 response.setMenuItemId(orderItem.getMenuItem().getId());
                 response.setMenuItemName(orderItem.getMenuItem().getName());
+                response.setMenuItemImageUrl(orderItem.getMenuItem().getImageUrl());
                 response.setQuantity(orderItem.getQuantity());
                 response.setUnitPrice(orderItem.getUnitPrice());
                 response.setSubtotal(orderItem.getSubtotal());

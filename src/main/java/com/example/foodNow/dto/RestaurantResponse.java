@@ -17,4 +17,6 @@ public class RestaurantResponse {
     private String ownerName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Double averageRating;
+    private Integer ratingCount;
 }

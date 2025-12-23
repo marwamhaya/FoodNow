@@ -9,6 +9,7 @@ import java.util.List;
 public class MenuItemResponse {
     private Long id;
     private Long restaurantId;
+    private String restaurantName;
     private String name;
     private String description;
     private BigDecimal price;

@@ -24,6 +24,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Find orders by client
     Page<Order> findByClientId(Long clientId, Pageable pageable);
 
+    // Stats for Dashboard
+    long countByRestaurantId(Long restaurantId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.restaurant.id = :restaurantId AND o.status = :status")
+    java.math.BigDecimal sumTotalAmountByRestaurantIdAndStatus(Long restaurantId,
+            com.example.foodNow.model.Order.OrderStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT o.client.id) FROM Order o WHERE o.restaurant.id = :restaurantId AND o.status = 'DELIVERED'")
+    Integer countDistinctClientsByRestaurantId(Long restaurantId);
+
     @org.springframework.data.jpa.repository.Query("SELECT SUM(o.totalAmount) FROM Order o")
     java.math.BigDecimal sumTotalAmount();
 

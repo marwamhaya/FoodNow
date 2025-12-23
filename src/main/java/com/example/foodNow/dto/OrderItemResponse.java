@@ -13,6 +13,7 @@ public class OrderItemResponse {
     private Long id;
     private Long menuItemId;
     private String menuItemName;
+    private String menuItemImageUrl;
     private Integer quantity;
     private BigDecimal unitPrice;
     private BigDecimal subtotal;

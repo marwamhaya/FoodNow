@@ -86,6 +86,11 @@ public class MenuItemService {
         if (request.getIsAvailable() != null) {
             menuItem.setIsAvailable(request.getIsAvailable());
         }
+
+        if (request.getOptionGroups() != null) {
+            updateOptionGroups(menuItem, request.getOptionGroups());
+        }
+
         menuItem.setUpdatedAt(java.time.LocalDateTime.now());
 
         MenuItem updatedMenuItem = menuItemRepository.save(menuItem);
@@ -154,10 +159,87 @@ public class MenuItemService {
         }
     }
 
+    public List<MenuItemResponse> getPopularMenuItems() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        return menuItemRepository.findMostPopularItems(pageable).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private void updateOptionGroups(MenuItem menuItem,
+            List<com.example.foodNow.dto.MenuOptionGroupRequest> groupRequests) {
+        java.util.Map<Long, com.example.foodNow.model.MenuOptionGroup> existingGroups = menuItem.getOptionGroups()
+                .stream()
+                .filter(g -> g.getId() != null)
+                .collect(java.util.stream.Collectors.toMap(com.example.foodNow.model.MenuOptionGroup::getId, g -> g));
+
+        java.util.List<com.example.foodNow.model.MenuOptionGroup> updatedGroups = new java.util.ArrayList<>();
+
+        for (com.example.foodNow.dto.MenuOptionGroupRequest groupRequest : groupRequests) {
+            com.example.foodNow.model.MenuOptionGroup group;
+            if (groupRequest.getId() != null && existingGroups.containsKey(groupRequest.getId())) {
+                group = existingGroups.get(groupRequest.getId());
+            } else {
+                group = new com.example.foodNow.model.MenuOptionGroup();
+                group.setMenuItem(menuItem);
+            }
+            group.setName(groupRequest.getName());
+            group.setRequired(groupRequest.isRequired());
+            group.setMultiple(groupRequest.isMultiple());
+
+            updateOptions(group, groupRequest.getOptions());
+            updatedGroups.add(group);
+        }
+
+        // Match and update
+        menuItem.getOptionGroups().removeIf(g -> updatedGroups.stream().noneMatch(ug -> ug == g));
+        for (com.example.foodNow.model.MenuOptionGroup ug : updatedGroups) {
+            if (!menuItem.getOptionGroups().contains(ug)) {
+                menuItem.getOptionGroups().add(ug);
+            }
+        }
+    }
+
+    private void updateOptions(com.example.foodNow.model.MenuOptionGroup group,
+            List<com.example.foodNow.dto.MenuOptionRequest> optionRequests) {
+        if (optionRequests == null) {
+            group.getOptions().clear();
+            return;
+        }
+
+        java.util.Map<Long, com.example.foodNow.model.MenuOption> existingOptions = group.getOptions().stream()
+                .filter(o -> o.getId() != null)
+                .collect(java.util.stream.Collectors.toMap(com.example.foodNow.model.MenuOption::getId, o -> o));
+
+        java.util.List<com.example.foodNow.model.MenuOption> updatedOptions = new java.util.ArrayList<>();
+
+        for (com.example.foodNow.dto.MenuOptionRequest optionRequest : optionRequests) {
+            com.example.foodNow.model.MenuOption option;
+            if (optionRequest.getId() != null && existingOptions.containsKey(optionRequest.getId())) {
+                option = existingOptions.get(optionRequest.getId());
+            } else {
+                option = new com.example.foodNow.model.MenuOption();
+                option.setOptionGroup(group);
+            }
+            option.setName(optionRequest.getName());
+            option.setExtraPrice(optionRequest.getExtraPrice());
+            updatedOptions.add(option);
+        }
+
+        // Match and update
+        group.getOptions().removeIf(o -> updatedOptions.stream().noneMatch(uo -> uo == o));
+        for (com.example.foodNow.model.MenuOption uo : updatedOptions) {
+            if (!group.getOptions().contains(uo)) {
+                group.getOptions().add(uo);
+            }
+        }
+    }
+
     private MenuItemResponse mapToResponse(MenuItem menuItem) {
         MenuItemResponse response = new MenuItemResponse();
         response.setId(menuItem.getId());
         response.setRestaurantId(menuItem.getRestaurant().getId());
+        response.setRestaurantName(menuItem.getRestaurant().getName());
         response.setName(menuItem.getName());
         response.setDescription(menuItem.getDescription());
         response.setPrice(menuItem.getPrice());

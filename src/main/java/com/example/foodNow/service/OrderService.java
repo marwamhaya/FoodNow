@@ -13,8 +13,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -23,8 +21,10 @@ public class OrderService {
         private final UserRepository userRepository;
         private final RestaurantRepository restaurantRepository;
         private final com.example.foodNow.repository.MenuItemRepository menuItemRepository;
+        private final com.example.foodNow.repository.MenuOptionRepository menuOptionRepository;
         private final NotificationService notificationService;
         private final DeliveryService deliveryService;
+        private final com.example.foodNow.repository.DeliveryRepository deliveryRepository;
 
         // ... (rest of class)
 
@@ -90,10 +90,43 @@ public class OrderService {
                         orderItem.setOrder(order);
                         orderItem.setMenuItem(menuItem);
                         orderItem.setQuantity(itemRequest.getQuantity());
-                        orderItem.setUnitPrice(menuItem.getPrice());
-                        orderItem
-                                        .setSubtotal(menuItem.getPrice().multiply(
-                                                        java.math.BigDecimal.valueOf(itemRequest.getQuantity())));
+
+                        java.math.BigDecimal itemUnitPrice = menuItem.getPrice();
+                        java.util.List<com.example.foodNow.model.OrderItemOption> selectedOptions = new java.util.ArrayList<>();
+
+                        if (itemRequest.getSelectedOptionIds() != null
+                                        && !itemRequest.getSelectedOptionIds().isEmpty()) {
+                                for (Long optionId : itemRequest.getSelectedOptionIds()) {
+                                        com.example.foodNow.model.MenuOption option = menuOptionRepository
+                                                        .findById(optionId)
+                                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                                        "Option not found: " + optionId));
+
+                                        // Verify option belongs to one of the menu item's groups
+                                        boolean isValidOption = menuItem.getOptionGroups().stream()
+                                                        .flatMap(group -> group.getOptions().stream())
+                                                        .anyMatch(opt -> opt.getId().equals(option.getId()));
+
+                                        if (!isValidOption) {
+                                                throw new IllegalArgumentException("Option " + option.getName()
+                                                                + " does not belong to menu item "
+                                                                + menuItem.getName());
+                                        }
+
+                                        itemUnitPrice = itemUnitPrice.add(option.getExtraPrice());
+
+                                        com.example.foodNow.model.OrderItemOption orderItemOption = new com.example.foodNow.model.OrderItemOption();
+                                        orderItemOption.setOrderItem(orderItem);
+                                        orderItemOption.setMenuOption(option);
+                                        orderItemOption.setPriceAtOrderTime(option.getExtraPrice());
+                                        selectedOptions.add(orderItemOption);
+                                }
+                        }
+
+                        orderItem.setUnitPrice(itemUnitPrice); // Unit price includes supplements
+                        orderItem.setSubtotal(itemUnitPrice
+                                        .multiply(java.math.BigDecimal.valueOf(itemRequest.getQuantity())));
+                        orderItem.setSelectedOptions(selectedOptions);
 
                         orderItems.add(orderItem);
                         totalAmount = totalAmount.add(orderItem.getSubtotal());
@@ -156,6 +189,8 @@ public class OrderService {
                 response.setClientPhone(order.getClient().getPhoneNumber());
                 response.setRestaurantId(order.getRestaurant().getId());
                 response.setRestaurantName(order.getRestaurant().getName());
+                response.setRestaurantImageUrl(order.getRestaurant().getImageUrl());
+                response.setRestaurantAddress(order.getRestaurant().getAddress());
                 response.setTotalAmount(order.getTotalAmount());
                 response.setStatus(order.getStatus());
                 response.setDeliveryAddress(order.getDeliveryAddress());
@@ -169,6 +204,14 @@ public class OrderService {
                                 .collect(java.util.stream.Collectors.toList());
                 response.setOrderItems(orderItemResponses);
 
+                // Populate Driver Info
+                deliveryRepository.findByOrderId(order.getId()).ifPresent(delivery -> {
+                        if (delivery.getDriver() != null) {
+                                response.setDriverName(delivery.getDriver().getFullName());
+                                response.setDriverPhone(delivery.getDriver().getPhoneNumber());
+                        }
+                });
+
                 return response;
         }
 
@@ -178,6 +221,7 @@ public class OrderService {
                 response.setId(orderItem.getId());
                 response.setMenuItemId(orderItem.getMenuItem().getId());
                 response.setMenuItemName(orderItem.getMenuItem().getName());
+                response.setMenuItemImageUrl(orderItem.getMenuItem().getImageUrl());
                 response.setQuantity(orderItem.getQuantity());
                 response.setUnitPrice(orderItem.getUnitPrice());
                 response.setSubtotal(orderItem.getSubtotal());

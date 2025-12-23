@@ -7,7 +7,10 @@ import lombok.Data;
 import java.util.List;
 
 @Data
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public class MenuOptionGroupRequest {
+
+    private Long id;
 
     @NotBlank(message = "Group name is required")
     private String name;

@@ -77,6 +77,13 @@ public class RestaurantController {
         return ResponseEntity.ok(restaurantService.getMyRestaurant());
     }
 
+    @GetMapping("/my-stats")
+    @PreAuthorize("hasRole('RESTAURANT')")
+    public ResponseEntity<com.example.foodNow.dto.RestaurantStatsResponse> getMyStats(
+            @RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(restaurantService.getRestaurantStats(token));
+    }
+
     /**
      * Get all orders for the current restaurant owner
      */
